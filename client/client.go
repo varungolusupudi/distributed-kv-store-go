@@ -1,7 +1,19 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"net"
+)
 
 func main() {
 	fmt.Println("Client Starting....")
+
+	conn, err := net.Dial("tcp", ":8080")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer conn.Close()
+
 }

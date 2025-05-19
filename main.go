@@ -1,21 +1,56 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net"
+	"os"
 )
 
-//TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
+type Config struct {
+	Port  string   `json:"port"`
+	Peers []string `json:"peers"`
+}
+
+func handleConnection(conn net.Conn) {
+	// TODO
+}
 
 func main() {
-	//TIP <p>Press <shortcut actionId="ShowIntentionActions"/> when your caret is at the underlined text
-	// to see how GoLand suggests fixing the warning.</p><p>Alternatively, if available, click the lightbulb to view possible fixes.</p>
-	s := "gopher"
-	fmt.Println("Hello and welcome, %s!", s)
+	fmt.Println("Nodes starting...")
 
-	for i := 1; i <= 5; i++ {
-		//TIP <p>To start your debugging session, right-click your code in the editor and select the Debug option.</p> <p>We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-		// for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.</p>
-		fmt.Println("i =", 100/i)
+	// Opening the config.json file
+	jsonFile, err := os.Open("config.json")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Successfully Opened config.json")
+
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+
+	var config Config
+	json.Unmarshal(byteValue, &config)
+
+	defer jsonFile.Close()
+
+	ln, err := net.Listen("tcp", config.Port)
+	if err != nil {
+		log.Println("Error listening on port " + config.Port)
+		// TODO: Gracefully exit?
+	}
+
+	defer ln.Close()
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		go handleConnection(conn)
 	}
 }

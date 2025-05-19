@@ -1,0 +1,4 @@
+{
+  "port": ":8080",
+  "peers": ["localhost:8081", "localhost:8082"]
+}
