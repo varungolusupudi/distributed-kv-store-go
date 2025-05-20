@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
+	"distributed-kv-store-go/store"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -15,11 +18,44 @@ type Config struct {
 }
 
 func handleConnection(conn net.Conn) {
-	// TODO
+	defer conn.Close()
+
+	reader := bufio.NewReader(conn)
+
+	for {
+		msg, err := reader.ReadString('\n')
+
+		if err != nil {
+			log.Println("Client Disconnected....")
+			return
+		}
+
+		fmt.Printf("Received %s \n", msg)
+
+		args := strings.Split(strings.TrimSpace(msg), " ")
+
+		operation := strings.ToUpper(args[0])
+		switch operation {
+		case "GET":
+			store.Get(args, conn)
+		case "SET":
+			store.Set(args, conn)
+		case "DEL":
+			store.Del(args, conn)
+		case "EXPIRE":
+			store.Expire(args, conn)
+		default:
+			conn.Write([]byte("Unknown Operation....\n"))
+		}
+
+	}
+
 }
 
 func main() {
-	fmt.Println("Nodes starting...")
+	fmt.Println("Node starting...")
+
+	store.InitStore()
 
 	// Opening the config.json file
 	jsonFile, err := os.Open("config.json")
@@ -40,7 +76,7 @@ func main() {
 	ln, err := net.Listen("tcp", config.Port)
 	if err != nil {
 		log.Println("Error listening on port " + config.Port)
-		// TODO: Gracefully exit?
+		return
 	}
 
 	defer ln.Close()
@@ -49,6 +85,7 @@ func main() {
 		conn, err := ln.Accept()
 		if err != nil {
 			log.Fatal(err)
+			return
 		}
 
 		go handleConnection(conn)
